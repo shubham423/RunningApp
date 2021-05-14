@@ -24,7 +24,6 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.model.LatLng
 import com.shubham.runningapp.R
 import com.shubham.runningapp.other.Constants.ACTION_PAUSE_SERVICE
-import com.shubham.runningapp.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
 import com.shubham.runningapp.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.shubham.runningapp.other.Constants.ACTION_STOP_SERVICE
 import com.shubham.runningapp.other.Constants.FASTEST_LOCATION_INTERVAL
@@ -34,7 +33,6 @@ import com.shubham.runningapp.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.shubham.runningapp.other.Constants.NOTIFICATION_ID
 import com.shubham.runningapp.other.Constants.TIMER_UPDATE_INTERVAL
 import com.shubham.runningapp.other.TrackingUtility
-import com.shubham.runningapp.ui.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

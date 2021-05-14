@@ -2,7 +2,9 @@ package com.shubham.runningapp.ui.fragments
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.*
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -28,8 +30,11 @@ import com.shubham.runningapp.services.TrackingService
 import com.shubham.runningapp.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_tracking.*
+import timber.log.Timber.log
 import java.util.*
 import kotlin.math.round
+
+const val CANCEL_TRACKING_DIALOG_TAG="CancelDialog"
 
 @AndroidEntryPoint
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
@@ -61,6 +66,13 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         mapView.onCreate(savedInstanceState)
         btnToggleRun.setOnClickListener {
             toggleRun()
+        }
+
+        if (savedInstanceState!=null){
+            val cancelTrackingDialog=parentFragmentManager.findFragmentByTag(CANCEL_TRACKING_DIALOG_TAG) as CancelTrackingDialog?
+            cancelTrackingDialog?.setYesListener {
+                stopRun()
+            }
         }
 
         btnFinishRun.setOnClickListener {
@@ -126,31 +138,25 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     }
 
     private fun showCancelTrackingDialog() {
-        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-                .setTitle("Cancel the Run?")
-                .setMessage("Are you sure to cancel the current run and delete all its data?")
-                .setIcon(R.drawable.ic_delete)
-                .setPositiveButton("Yes") { _, _ ->
-                    stopRun()
-                }
-                .setNegativeButton("No") { dialogInterface, _ ->
-                    dialogInterface.cancel()
-                }
-                .create()
-        dialog.show()
+        CancelTrackingDialog().apply {
+            setYesListener {
+                stopRun()
+            }
+        }.show(parentFragmentManager,CANCEL_TRACKING_DIALOG_TAG)
     }
 
     private fun stopRun() {
+        tvTimer.text="00:00:00:00"
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
-        if(!isTracking) {
+        if(!isTracking && curTimeInMillis>0) {
             btnToggleRun.text = "Start"
             btnFinishRun.visibility = View.VISIBLE
-        } else {
+        } else if(isTracking) {
             btnToggleRun.text = "Stop"
             menu?.getItem(0)?.isVisible = true
             btnFinishRun.visibility = View.GONE
@@ -170,20 +176,28 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private fun zoomToSeeWholeTrack() {
         val bounds = LatLngBounds.Builder()
+       Log.d("Tracking Fragment","bound is $bounds")
         for(polyline in pathPoints) {
             for(pos in polyline) {
+                Log.d("Tracking Fragment","pos is $bounds")
                 bounds.include(pos)
             }
         }
 
-        map?.moveCamera(
-                CameraUpdateFactory.newLatLngBounds(
-                        bounds.build(),
-                        mapView.width,
-                        mapView.height,
-                        (mapView.height * 0.05f).toInt()
-                )
-        )
+        if (pathPoints.isNullOrEmpty()){
+            Toast.makeText(requireContext(), "its what i suspected", Toast.LENGTH_LONG).show()
+        }
+        bounds.let {
+            map?.moveCamera(
+                    CameraUpdateFactory.newLatLngBounds(
+                            bounds.build(),
+                            mapView.width,
+                            mapView.height,
+                            (mapView.height * 0.05f).toInt()
+                    )
+            )
+        }
+
     }
 
     private fun endRunAndSaveToDb() {
